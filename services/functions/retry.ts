@@ -4,7 +4,7 @@ const sqs = new SQS();
 const lambda = new Lambda();
 
 const EXP_RATE = 1.5;
-const MIN_TIME = 60;
+const MIN_TIME = 10;
 const MAX_RETRY = 3;
 
 export const handler : SQSHandler  = async (event : SQSEvent) => {
@@ -18,13 +18,14 @@ export const handler : SQSHandler  = async (event : SQSEvent) => {
         const payload : {retry_metadata: {attempt: number}, original_payload: object} = JSON.parse(event.Records[0].body);
 
         if (payload.retry_metadata) {
-            messageRetryCount = payload.retry_metadata.attempt + 1
+            messageRetryCount = payload.retry_metadata.attempt + 1;
         } else {
-            messageRetryCount = 1
+            messageRetryCount = 1;
         }
 
         if (messageRetryCount > MAX_RETRY) {
             // Move payload to dynamo db
+            console.log("Move to db", payload)
         }
 
         if(first_receive) {
@@ -39,43 +40,50 @@ export const handler : SQSHandler  = async (event : SQSEvent) => {
 
 const returnSqsWithBackoff = async (event: SQSEvent, messageRetryCount: number) : Promise<void> => {
     const exp_backoff = MIN_TIME * EXP_RATE ** messageRetryCount;
-    const jitter = calculateFullJitter(0, exp_backoff)
+    const jitter = calculateFullJitter(MIN_TIME, exp_backoff)
 
     console.log("Exp Backoff", exp_backoff);
     console.log("Jitter", jitter);
+
     const visibilityParams = {
         QueueUrl: "https://sqs.ap-south-1.amazonaws.com/842120176259/dev-kloudmate-backend-test-RetryQueue",
         ReceiptHandle: event.Records[0].receiptHandle,
         VisibilityTimeout: jitter
     }
-    console.log("Params", visibilityParams);
-    // const resp = await sqs.changeMessageVisibility(params).promise();
-    const timeoutCHange = await sqs.changeMessageVisibility(visibilityParams).promise();
-    console.log("TimeOut Change", timeoutCHange);
+    try {
+        const resp = await sqs.changeMessageVisibility(visibilityParams).promise();
+        console.log("Visibility Success", resp)
+    } catch (e:any) {
+        console.log("Visibility Error", e.message);
+    }
+    return
 }
 
-const retryLambda = async (payload: {retry_metadata: {attempt: number}, original_payload: object}) : Promise<void>=> {
-    console.log("Payload", payload)
-    let lambdaPayload: any;
-
-    // if (payload.retry_metadata) {
-    //     payload.retry_metadata.attempt += 1;
-    //     lambdaPayload = payload
-    // } else {
-    //     lambdaPayload.original_payload = payload
-    //     lambdaPayload.retry_metadata = {
-    //         attempt: 1
-    //     };
-    // }
-
-    // console.log("Lambda Payload", lambdaPayload)
-    const response = await lambda.invoke({
-        FunctionName: "QueueConsumer",
-        InvocationType: "Event",
-        Payload: JSON.stringify(payload)
-    }).promise();
-
-    console.log("REsponse", response);
+const retryLambda = async (payload : any) : Promise<void>=> {
+    try {
+        let lambdaPayload = {};
+    
+        if (payload.retry_metadata) {
+            payload.retry_metadata.attempt += 1;
+            lambdaPayload = payload
+        } else {
+            lambdaPayload.original_payload = payload
+            lambdaPayload.retry_metadata = {
+                attempt: 1
+            };
+        }
+    
+        console.log("Lambda Payload", lambdaPayload)
+        const response = await lambda.invoke({
+            FunctionName: "QueueConsumer",
+            InvocationType: "Event",
+            Payload: JSON.stringify(lambdaPayload)
+        }).promise();
+    
+        console.log("Response", response); 
+    } catch (error) {
+        console.log(error)
+    }
 }
 
 const calculateFullJitter = (min : number, max : number) : number => {

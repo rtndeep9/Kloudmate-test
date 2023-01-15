@@ -44,43 +44,43 @@ export async function handler() {
   await sqs
     .sendMessageBatch({
       Entries: [{
-        Id: "1",
-        MessageBody: JSON.stringify({ordered: true})
-      },
-      {
-        Id: "2",
+        Id: "11",
         MessageBody: JSON.stringify({ordered: false})
       },
       {
-        Id: "3",
-        MessageBody: JSON.stringify({ordered: true})
-      },
-      {
-        Id: "4",
+        Id: "12",
         MessageBody: JSON.stringify({ordered: false})
       },
       {
-        Id: "5",
-        MessageBody: JSON.stringify({ordered: true})
-      },
-      {
-        Id: "6",
+        Id: "13",
         MessageBody: JSON.stringify({ordered: false})
       },
       {
-        Id: "7",
-        MessageBody: JSON.stringify({ordered: true})
-      },
-      {
-        Id: "8",
+        Id: "14",
         MessageBody: JSON.stringify({ordered: false})
       },
       {
-        Id: "9",
-        MessageBody: JSON.stringify({ordered: true})
+        Id: "15",
+        MessageBody: JSON.stringify({ordered: false})
       },
       {
-        Id: "10",
+        Id: "16",
+        MessageBody: JSON.stringify({ordered: false})
+      },
+      {
+        Id: "17",
+        MessageBody: JSON.stringify({ordered: false})
+      },
+      {
+        Id: "18",
+        MessageBody: JSON.stringify({ordered: false})
+      },
+      {
+        Id: "19",
+        MessageBody: JSON.stringify({ordered: false})
+      },
+      {
+        Id: "20",
         MessageBody: JSON.stringify({ordered: false})
       }],
       QueueUrl: Queue.Queue.queueUrl
