@@ -1,5 +1,5 @@
 {
   "name": "kloudmate-backend-test",
-  "region": "ap-southeast-1",
+  "region": "us-east-1",
   "main": "stacks/index.ts"
 }
