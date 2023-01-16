@@ -5,6 +5,10 @@ const ddb = new DynamoDB();
 
 export const fetchMessagesDal = async (desc:boolean, startDate:any, endDate:any) => {
     try {
+
+        if(startDate.length != 19 || endDate.length != 19) {
+            throw new Error('Invalid date format');
+        }
         const result: any[] = [];
         const params : DynamoDB.ScanInput = {
             ExpressionAttributeValues: {

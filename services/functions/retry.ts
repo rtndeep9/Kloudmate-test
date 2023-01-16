@@ -28,6 +28,8 @@ export const handler : SQSHandler  = async (event : SQSEvent) => {
             const exp_backoff = MIN_TIME * EXP_RATE ** (retryAttempt);
             const jitter = calculateFullJitter(MIN_TIME, exp_backoff);
 
+            console.log("Exp Backoff: "+ exp_backoff+" jitter: "+ jitter);
+
             const params = {
                 QueueUrl: Queue.Queue.queueUrl,
                 MessageBody: record['body'],
