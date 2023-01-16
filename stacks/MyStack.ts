@@ -1,14 +1,15 @@
 import { Api, StackContext, Table, Queue } from "@serverless-stack/resources";
-import { SqsDestination } from "aws-cdk-lib/aws-lambda-destinations";
 
 export function MyStack({ stack }: StackContext) {
 
   // Create the table
-  const failedMessagesTable = new Table(stack, "FailedMessages", {
+  const failedMessagesTable = new Table(stack, "FailedMessages4", {
     fields: {
+      id: "string",
       message: "string",
+      createdAt: "string"
     },
-    primaryIndex: { partitionKey: "message" },
+    primaryIndex: { partitionKey: "id", sortKey: "createdAt" },
   });
 
   //Create a retry queue
@@ -18,13 +19,14 @@ export function MyStack({ stack }: StackContext) {
         functionName: "RetryQueueConsumer",
         handler: "functions/retry.handler",
         timeout: 30,
-        permissions: ["lambda", "sqs"]
+        permissions: ["sqs"],
+        bind: [failedMessagesTable]
       },
       cdk: {
         eventSource: {
-          batchSize: 1
+          batchSize: 1 ,
         }
-      }
+      },
     },
   });
 
@@ -35,14 +37,26 @@ export function MyStack({ stack }: StackContext) {
         functionName: "QueueConsumer",
         handler: "functions/consumer.handler",
         timeout: 30,
-        retryAttempts: 0,
-        bind: [retryQueue],
-        permissions: ["sqs", "lambda"]
-        // onFailure: new SqsDestination(retryQueue.cdk.queue)        
+        permissions: ["sqs", "lambda"],
+      },   
+      cdk: {
+        eventSource: {
+          reportBatchItemFailures: true
+        }
+      },
+    },
+    cdk: {
+      queue: {
+        deadLetterQueue: {
+          maxReceiveCount: 1,
+          queue: retryQueue.cdk.queue
+        }
       }
     }
   });
 
+  retryQueue.bind([queue])
+  
   // Create the HTTP API
   const api = new Api(stack, "Api", {
     defaults: {
@@ -51,7 +65,8 @@ export function MyStack({ stack }: StackContext) {
       },
     },
     routes: {
-      "POST /hello": "functions/lambda.handler",
+      "POST /send-sqs-messages": "functions/producer.handler",
+      "GET /failed-messages": "functions/failed-message-api.handler"
     },
   });
 
