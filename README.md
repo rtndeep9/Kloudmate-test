@@ -1,45 +1,55 @@
-# How to use DynamoDB in your serverless app
 
-An example serverless app created with SST.
+# SQS-Retry
 
-## Getting Started
+An SQS with retry functionality and saving failed messages to DynamoDb
 
-[**Read the tutorial**](https://sst.dev/examples/how-to-use-dynamodb-in-your-serverless-app.html)
 
-Install the example.
+
+
+## Architecture
+![kloudmate drawio](https://user-images.githubusercontent.com/24302577/212895068-3e171916-2c68-48f6-b4ff-2bcfe353bac3.png)
+
+## Run Locally
+
+Clone the project
 
 ```bash
-$ npx create-sst@latest --template=examples/rest-api-dynamodb
-# Or with Yarn
-$ yarn create sst --template=examples/rest-api-dynamodb
+  git clone https://github.com/rtndeep9/SQS-Retry.git
 ```
 
-## Commands
+Go to the project directory
 
-### `npm run start`
+```bash
+  cd SQS-Retry
+```
 
-Starts the Live Lambda Development environment.
+Install dependencies
 
-### `npm run build`
+```bash
+  npm install
+```
 
-Build your app and synthesize your stacks.
+Start the serverless app
 
-### `npm run deploy [stack]`
+```bash
+  npm start
+```
 
-Deploy all your stacks to AWS. Or optionally deploy, a specific stack.
 
-### `npm run remove [stack]`
+## Sending Messages to SQS
 
-Remove all your stacks and all of their resources from AWS. Or optionally removes, a specific stack.
+Send a **POST** request to the ```send-sqs-messages``` endpoint with a JSON Body.
 
-### `npm run test`
+The body can be found in ```producer-payload.json``` file in the root directory.
 
-Runs your tests using Jest. Takes all the [Jest CLI options](https://jestjs.io/docs/en/cli).
+## REST API to query failed messages
 
-## Documentation
+Send a **GET** request to the ```failed-messages``` endpoint with the following query params:
 
-Learn more about the SST.
+**Required:** ```startDate: YYYY-MM-DD HH:MM:SS``` ```endDate: YYYY-MM-DD HH:MM:SS```
 
-- [Docs](https://docs.sst.dev/)
-- [@serverless-stack/cli](https://docs.sst.dev/packages/cli)
-- [@serverless-stack/resources](https://docs.sst.dev/packages/resources)
+**Optional:** ```desc: Boolean```
+*If no ```desc``` is mentioned the results will be returned in ascending order*
+
+**Example:** ```https://xyz.com/failed-messages?startDate=2023-01-17 16:36:00&endDate=2023-01-17 16:55:00&desc=true```
+ 
