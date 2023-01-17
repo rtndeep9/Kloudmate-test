@@ -10,6 +10,7 @@ export const handler: APIGatewayProxyHandlerV2 = async (request) => {
 		if (!body) {
 			throw new Error("Invalid Payload, Send an array of objects in messages")
 		}
+		//Create a batch of 10 messages and send them to the queue
 		await sendMessages(body.messages);
 		return {
 			statusCode: 200,

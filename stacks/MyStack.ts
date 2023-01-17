@@ -2,7 +2,7 @@ import { Api, StackContext, Table, Queue, Config } from "@serverless-stack/resou
 
 export function MyStack({ stack }: StackContext) {
 
-	// Create the table
+	// Create a table for failed messages
 	const failedMessagesTable = new Table(stack, "FailedMessages11", {
 		fields: {
 			id: "string",
@@ -12,7 +12,7 @@ export function MyStack({ stack }: StackContext) {
 		primaryIndex: { partitionKey: "id", sortKey: "createdAt" },
 	});
 
-	//Create a retry queue
+	//Create a retry queue which triggers a lambda with one Queue message at a time
 	const retryQueue = new Queue(stack, "RetryQueue", {
 		consumer: {
 			function: {
@@ -30,7 +30,7 @@ export function MyStack({ stack }: StackContext) {
 		},
 	});
 
-	//Create a queue
+	//Create a Regualr queue configured with a DLQ
 	const queue = new Queue(stack, "Queue", {
 		cdk: {
 			queue: {
@@ -41,6 +41,7 @@ export function MyStack({ stack }: StackContext) {
 			}
 		}
 	});
+	//Lazily add a consumer to the queue
 	queue.addConsumer(stack, {
 		function: {
 			functionName: "QueueConsumer",
@@ -83,10 +84,7 @@ export function MyStack({ stack }: StackContext) {
 		},
 	});
 
-	process.env.QUEUE_URL = queue.queueUrl;
-	process.env.RETRY_QUEUE_URL = retryQueue.queueUrl;
-
-	// Show the API endpoint in the output
+	// Show the API endpoint and Queue's URL in the output
 	stack.addOutputs({
 		ApiEndpoint: api.url,
 		QueueUrl: queue.queueUrl,

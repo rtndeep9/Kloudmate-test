@@ -5,6 +5,7 @@ import { formatedTimestamp } from "lib";
 
 const dynamoDb = new DynamoDB.DocumentClient();
 
+//Fetch messages from the table for a give date range and sort them
 export const fetchMessages = async (desc:boolean, startDate:any, endDate:any) => {
     const ddb = new DynamoDB();
     try {
@@ -24,13 +25,14 @@ export const fetchMessages = async (desc:boolean, startDate:any, endDate:any) =>
 
         const messages: DynamoDB.ScanOutput = await ddb.scan(params).promise();
         
+        //Unmarshall ScanOutput and store it in result array 
         if(messages.Items) {
             for (let message of messages.Items) {
                 result.push(DynamoDB.Converter.unmarshall(message))
             }
         }
 
-        //Sort Messages
+        //Sort Messages by date
         if(!desc) {
             result.sort((a,b) => {
                 return a.createdAt > b.createdAt ? 1 : a.createdAt === b.createdAt ? 0 : -1
@@ -48,6 +50,7 @@ export const fetchMessages = async (desc:boolean, startDate:any, endDate:any) =>
     }
 };
 
+//Save failed messages to the FailedMessages11 table
 export const saveMessage = async (event: SQSRecord) : Promise<void> => {
     try {
         console.log("Saving to DB...");
