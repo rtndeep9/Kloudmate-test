@@ -1,11 +1,13 @@
 import { Table } from "@serverless-stack/node/table";
+import { SQSRecord } from "aws-lambda";
 import { DynamoDB } from "aws-sdk";
+import { formatedTimestamp } from "lib";
 
-const ddb = new DynamoDB();
+const dynamoDb = new DynamoDB.DocumentClient();
 
-export const fetchMessagesDal = async (desc:boolean, startDate:any, endDate:any) => {
+export const fetchMessages = async (desc:boolean, startDate:any, endDate:any) => {
+    const ddb = new DynamoDB();
     try {
-
         if(startDate.length != 19 || endDate.length != 19) {
             throw new Error('Invalid date format');
         }
@@ -17,7 +19,7 @@ export const fetchMessagesDal = async (desc:boolean, startDate:any, endDate:any)
             },
             FilterExpression: 'createdAt BETWEEN :s and :e',
             ProjectionExpression: 'message,createdAt',
-            TableName: Table.FailedMessages4.tableName,            
+            TableName: Table.FailedMessages11.tableName,            
         }
 
         const messages: DynamoDB.ScanOutput = await ddb.scan(params).promise();
@@ -45,3 +47,23 @@ export const fetchMessagesDal = async (desc:boolean, startDate:any, endDate:any)
         return { status: 400, errorMessage: error.message };
     }
 };
+
+export const saveMessage = async (event: SQSRecord) : Promise<void> => {
+    try {
+        console.log("Saving to DB...");
+        const message = JSON.parse(event.body)
+        const putParams = {
+            TableName: Table.FailedMessages11.tableName,
+            Item: {
+                id: event.messageId,
+                message: message,
+                createdAt: formatedTimestamp(event.attributes.SentTimestamp)
+            }
+        }
+        await dynamoDb.put(putParams).promise()
+        console.log("Success")
+    } catch (err) {
+        const error = err as Error;
+        console.log("Move TO DB Error", error.message) 
+    }
+}

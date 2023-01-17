@@ -1,9 +1,9 @@
 import { Queue, } from "@serverless-stack/node/queue";
-import { SQSEvent, SQSHandler} from "aws-lambda";
+import { SQSEvent, SQSHandler } from "aws-lambda";
 import { SQS } from "aws-sdk";
 
-import { saveMessage } from "DataAccessLayer/saveMessage";
 import { calculateFullJitter } from "lib";
+import { saveMessage } from "../db/failedMessages";
 
 const sqs = new SQS();
 
@@ -11,24 +11,24 @@ const EXP_RATE = 1.5;
 const MIN_TIME = 60;
 const MAX_RETRY = 3;
 
-export const handler : SQSHandler  = async (event : SQSEvent) => {
+export const handler: SQSHandler = async (event: SQSEvent) => {
     try {
-        let retryAttempt:number = 0;
+        let retryAttempt: number = 0;
         const record = event.Records[0];
-        if (record.messageAttributes['sqs-retry-attempt']){
+        if (record.messageAttributes['sqs-retry-attempt']) {
             retryAttempt = parseInt(record.messageAttributes['sqs-retry-attempt']["stringValue"]!);
         }
 
-        console.log("Number of retries already done", retryAttempt);
         retryAttempt++;
 
-        if(retryAttempt > MAX_RETRY) {
+        if (retryAttempt > MAX_RETRY) {
             await saveMessage(record);
         } else {
+            console.log("Retry No", retryAttempt);
             const exp_backoff = MIN_TIME * EXP_RATE ** (retryAttempt);
             const jitter = calculateFullJitter(MIN_TIME, exp_backoff);
 
-            console.log("Exp Backoff: "+ exp_backoff+" jitter: "+ jitter);
+            console.log("Exp Backoff: " + exp_backoff + " jitter: " + jitter);
 
             const params = {
                 QueueUrl: Queue.Queue.queueUrl,
@@ -43,7 +43,8 @@ export const handler : SQSHandler  = async (event : SQSEvent) => {
             }
             await sqs.sendMessage(params).promise();
         }
-    } catch (e : any) {
-        console.log("Error", e.message)
+    } catch (err) {
+        const error = err as Error;
+        console.log("Error", error.message);
     }
 }

@@ -1,6 +1,6 @@
 {
   "extends": "../tsconfig.json",
-  "include": ["functions", "DataAccessLayer"],
+  "include": ["functions", "db"],
   "compilerOptions": {
     "module": "esnext",
     "target": "es2017",
