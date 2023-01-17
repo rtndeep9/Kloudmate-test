@@ -7,7 +7,7 @@ An SQS with retry functionality and saving failed messages to DynamoDb
 
 
 ## Architecture
-![kloudmate drawio](https://user-images.githubusercontent.com/24302577/212895068-3e171916-2c68-48f6-b4ff-2bcfe353bac3.png)
+![Untitled Diagram drawio](https://user-images.githubusercontent.com/24302577/212956701-1c137c6f-91f2-4eab-9253-f9488af84e80.png)
 
 ## Run Locally
 
