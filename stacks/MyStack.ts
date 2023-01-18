@@ -1,15 +1,19 @@
-import { Api, StackContext, Table, Queue, Config } from "@serverless-stack/resources";
+import { Api, StackContext, Table, Queue } from "@serverless-stack/resources";
 
 export function MyStack({ stack }: StackContext) {
 
 	// Create a table for failed messages
-	const failedMessagesTable = new Table(stack, "FailedMessages11", {
+	const failedMessagesTable = new Table(stack, "FailedMessages12", {
 		fields: {
 			id: "string",
 			message: "string",
-			createdAt: "string"
+			createdAt: "string",
+			status: "string"
 		},
 		primaryIndex: { partitionKey: "id", sortKey: "createdAt" },
+		globalIndexes: {
+			"time-index": { partitionKey: "status", sortKey: "createdAt"}
+		}
 	});
 
 	//Create a retry queue which triggers a lambda with one Queue message at a time
@@ -57,7 +61,7 @@ export function MyStack({ stack }: StackContext) {
 				reportBatchItemFailures: true
 			}
 		},
-	})
+	});
 
 	retryQueue.bind([queue]);
 
